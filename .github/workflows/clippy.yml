@@ -1,0 +1,35 @@
+name: Clippy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  clippy:
+    name: Run cargo clippy (aggressive)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cargo clippy (deny warnings + pedantic + nursery)
+        run: |
+          cargo clippy --all-targets --all-features -- -D warnings -D clippy::pedantic -D clippy::nursery -A clippy::multiple_crate_versions -A clippy::cast_sign_loss -A clippy::cast_possible_truncation -D missing_docs_in_private_items -F unused_imports
