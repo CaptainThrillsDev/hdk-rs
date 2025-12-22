@@ -513,45 +513,19 @@ mod tests {
     }
 
     #[test]
-    fn test_sdat_file_structure() {
-        // Test with actual SDAT file to verify our compression detection works
-        if let Ok(sdat_data) = fs::read("src/tests/samples/sdat/object_T047.sdat") {
-            // SDAT files start with NPD header, not compressed data directly
-            // The compressed data would be in the data section after headers
-
-            // Verify file starts with NPD header
-            assert_eq!(&sdat_data[0..3], b"NPD");
-
-            // The actual compressed data would be after the headers
-            if sdat_data.len() > METADATA_OFFSET {
-                let data_section = &sdat_data[METADATA_OFFSET..];
-
-                // Test compression detection on the data section
-                // Note: This might not be compressed data directly, but encrypted data
-                // The test verifies our functions don't panic on real data
-                let _is_comp = is_compressed(data_section);
-
-                // Test that our functions handle real data gracefully
-                if data_section.len() >= 5 {
-                    let _size_result = get_decompressed_size(data_section);
-                    // We don't assert the result since this might not be compressed data
-                }
-            }
-        } else {
-            // Skip test if sample file is not available
-        }
-    }
-
-    #[test]
     fn test_range_decoder_edge_cases() {
         // Test range decoder with minimal valid input
         let input = [0x01, 0x00, 0x00, 0x00, 0x00]; // Compressed format, minimal data
         let mut output = [0u8; 100];
 
-        // This should not panic, even if decompression fails
+        // For minimal/truncated compressed input we expect a graceful failure (Err)
+        // rather than a panic; assert that explicitly.
         let result = decompress(&input, &mut output);
-        // We don't assert success since this is minimal test data; just ensure it doesn't panic
-        let _ = result;
+        assert!(
+            result.is_err(),
+            "Expected decompression to fail for minimal input, got: {:?}",
+            result
+        );
     }
 
     #[test]

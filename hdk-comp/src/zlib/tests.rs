@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use std::io::{Read, Write};
     use crate::zlib::{reader::SegmentedZlibReader, writer::SegmentedZlibWriter};
+    use std::io::{Read, Write};
 
     #[test]
     fn test_roundtrip_simple() {
@@ -32,9 +32,6 @@ mod tests {
             writer.write_all(&data).unwrap();
             writer.finish().unwrap();
         }
-        
-        // Verify we have multiple chunks (header overhead implies size > compressed size mostly, but let's just check validity)
-        assert!(buffer.len() > 0);
 
         let mut reader = SegmentedZlibReader::new(&buffer[..]);
         let mut output = Vec::new();
@@ -42,25 +39,25 @@ mod tests {
 
         assert_eq!(data, output);
     }
-    
+
     #[test]
     fn test_empty() {
         let data = b"";
         let mut buffer = Vec::new();
-        
+
         {
-             let mut writer = SegmentedZlibWriter::new(&mut buffer);
-             writer.write_all(data).unwrap();
-             writer.finish().unwrap();
+            let mut writer = SegmentedZlibWriter::new(&mut buffer);
+            writer.write_all(data).unwrap();
+            writer.finish().unwrap();
         }
-        
+
         // Should be empty (no chunks)
         assert_eq!(buffer.len(), 0);
-        
+
         let mut reader = SegmentedZlibReader::new(&buffer[..]);
         let mut output = Vec::new();
         reader.read_to_end(&mut output).unwrap();
-        
+
         assert_eq!(output.len(), 0);
     }
 }
