@@ -39,8 +39,6 @@ mod tests {
         let original = block.clone();
 
         cipher.encrypt_block(&mut block);
-        let encrypted = block.clone();
-
         assert_ne!(block, original);
 
         cipher.decrypt_block(&mut block);
@@ -141,7 +139,6 @@ mod blowfish_tests {
         let mut block = original_block.clone();
 
         cipher.encrypt_block(&mut block);
-        let encrypted_block = block.clone();
         assert_ne!(block, original_block);
 
         cipher.decrypt_block(&mut block);
