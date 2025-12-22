@@ -1,0 +1,16 @@
+[package]
+name = "sdat"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aes = "0.8.4"
+sha1_smol = "1.0.1"
+thiserror = "2.0.17"
+
+git-version = { version = "0.3.9", optional = true }
+tracing = { version = "0.1.37", optional = true }
+
+[features]
+metadata = ["git-version"]
+logging = ["tracing"]
