@@ -1,0 +1,12 @@
+[package]
+name = "hdk-mdl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+binrw = "0.15.0"
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[features]
+export = ["serde", "serde_json"]
