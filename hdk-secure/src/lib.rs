@@ -3,6 +3,7 @@
 pub mod blowfish;
 pub mod modes;
 pub mod reader;
+pub mod sceneid;
 pub mod writer;
 pub mod xtea;
 
