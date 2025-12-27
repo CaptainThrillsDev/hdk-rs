@@ -1,11 +1,12 @@
 use binrw::prelude::*;
+use hdk_secure::hash::AfsHash;
 
 use std::convert::TryInto;
 
 // 1. The Raw Entry (as it appears in the decrypted ToC)
 #[derive(BinRead, Debug, Clone)]
 pub struct SharcEntry {
-    pub name_hash: u32,
+    name_hash: i32,
 
     // We map the u32 directly into a tuple: (offset, compression_enum)
     // 0xFFFFFFFC mask clears the last 2 bits
@@ -22,6 +23,10 @@ pub struct SharcEntry {
 
 impl SharcEntry {
     // Helper accessors
+    pub const fn name_hash(&self) -> AfsHash {
+        AfsHash(self.name_hash)
+    }
+
     pub const fn offset(&self) -> u64 {
         self.offset_and_comp.0 as u64
     }
@@ -41,7 +46,7 @@ impl SharcEntry {
 /// inspect metadata without caring about binrw-specific representation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SharcEntryMetadata {
-    pub name_hash: u32,
+    pub name_hash: AfsHash,
     pub offset: u64,
     pub compression_raw: u8,
     pub uncompressed_size: u32,
@@ -55,7 +60,7 @@ impl TryFrom<&SharcEntry> for SharcEntryMetadata {
     fn try_from(value: &SharcEntry) -> Result<Self, Self::Error> {
         let iv: [u8; 8] = value.iv.as_slice().try_into().map_err(|_| ())?;
         Ok(Self {
-            name_hash: value.name_hash,
+            name_hash: AfsHash(value.name_hash),
             offset: value.offset(),
             compression_raw: value.compression(),
             uncompressed_size: value.uncompressed_size,

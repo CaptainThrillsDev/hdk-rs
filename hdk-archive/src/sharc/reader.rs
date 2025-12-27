@@ -7,8 +7,7 @@ use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
 use flate2::read::ZlibDecoder;
 use hdk_comp::zlib::reader::SegmentedZlibReader;
-use hdk_secure::reader::CryptoReader;
-use hdk_secure::xtea::modes::XteaPS3;
+use hdk_secure::{hash::AfsHash, reader::CryptoReader, xtea::modes::XteaPS3};
 
 use super::structs::{
     SharcEntry, SharcEntryMetadata, SharcHeader, SharcInnerHeader, SharcPreamble,
@@ -173,8 +172,8 @@ impl<R: Read + Seek> SharcReader<R> {
     }
 
     /// Find the first entry index with a matching `name_hash`.
-    pub fn find_entry(&self, name_hash: u32) -> Option<usize> {
-        self.entries.iter().position(|e| e.name_hash == name_hash)
+    pub fn find_entry(&self, name_hash: AfsHash) -> Option<usize> {
+        self.entries.iter().position(|e| e.name_hash() == name_hash)
     }
 
     /// Returns a Reader that streams the file content, automatically handling

@@ -7,13 +7,13 @@ use rand::RngCore;
 use std::io::{self, Read, Write};
 
 use hdk_comp::zlib::writer::SegmentedZlibWriter;
-use hdk_secure::xtea::modes::XteaPS3;
+use hdk_secure::{hash::AfsHash, xtea::modes::XteaPS3};
 
 use crate::structs::{ARCHIVE_MAGIC, CompressionType, Endianness};
 
 /// Helper small struct to hold a queued entry for writing
 struct EntryToWrite {
-    name_hash: u32,
+    name_hash: AfsHash,
     compression: CompressionType,
     uncompressed_size: u32,
     compressed_size: u32,
@@ -66,7 +66,7 @@ impl<W: Write> SharcWriter<W> {
     /// Add an entry from a byte slice.
     pub fn add_entry_from_bytes(
         &mut self,
-        name_hash: u32,
+        name_hash: AfsHash,
         compression: CompressionType,
         bytes: &[u8],
     ) -> io::Result<()> {
@@ -78,7 +78,7 @@ impl<W: Write> SharcWriter<W> {
     /// This avoids requiring callers to provide the entire content as a single slice.
     pub fn add_entry_from_reader<Rd: Read + ?Sized>(
         &mut self,
-        name_hash: u32,
+        name_hash: AfsHash,
         compression: CompressionType,
         mut reader: &mut Rd,
     ) -> io::Result<()> {
@@ -141,9 +141,7 @@ impl<W: Write> SharcWriter<W> {
 
     pub fn finish(mut self) -> io::Result<W> {
         // Header sizes
-        const PREAMBLE_SIZE: usize = 4 + 4 + 16; // magic + ver/flags + iv
         const INNER_SIZE: usize = 4 + 4 + 4 + 16; // priority + timestamp + file_count + files_key
-        const HEADER_TOTAL: usize = PREAMBLE_SIZE + INNER_SIZE; // 52
 
         let file_count = self.entries.len() as u32;
         let toc_size = (file_count as usize) * 24;
@@ -209,14 +207,14 @@ impl<W: Write> SharcWriter<W> {
         for e in &self.entries {
             match self.endianness {
                 Endianness::Little => {
-                    toc_buf.write_u32::<LittleEndian>(e.name_hash)?;
+                    toc_buf.write_i32::<LittleEndian>(e.name_hash.0)?;
                     let offset_and_comp = (e.offset & 0xFFFFFFFC) | (e.compression as u32);
                     toc_buf.write_u32::<LittleEndian>(offset_and_comp)?;
                     toc_buf.write_u32::<LittleEndian>(e.uncompressed_size)?;
                     toc_buf.write_u32::<LittleEndian>(e.compressed_size)?;
                 }
                 Endianness::Big => {
-                    toc_buf.write_u32::<BigEndian>(e.name_hash)?;
+                    toc_buf.write_i32::<BigEndian>(e.name_hash.0)?;
                     let offset_and_comp = (e.offset & 0xFFFFFFFC) | (e.compression as u32);
                     toc_buf.write_u32::<BigEndian>(offset_and_comp)?;
                     toc_buf.write_u32::<BigEndian>(e.uncompressed_size)?;
