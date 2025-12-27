@@ -1,7 +1,7 @@
 use byteorder::{LittleEndian, WriteBytesExt};
 use enumflags2::BitFlags;
 use flate2::{Compression, write::ZlibEncoder};
-use std::io::{self, Cursor, Read, Seek, Write};
+use std::io::{self, Cursor, Read, Write};
 
 use crate::crypto::{DEFAULT_KEY, SIGNATURE_KEY};
 use ctr::Ctr64BE;
@@ -31,7 +31,7 @@ struct BarEntryToWrite {
     sha1: Option<[u8; 20]>,
 }
 
-impl<W: Write + Seek> BarWriter<W> {
+impl<W: Write> BarWriter<W> {
     pub fn new(inner: W) -> Self {
         Self {
             inner,
@@ -235,7 +235,7 @@ impl<W: Write + Seek> BarWriter<W> {
 }
 
 // Private helper for recalculating offsets
-impl<W: Write + Seek> BarWriter<W> {
+impl<W: Write> BarWriter<W> {
     fn calculate_offsets(&mut self) {
         let mut current_offset = 0;
         for entry in &mut self.entries {
