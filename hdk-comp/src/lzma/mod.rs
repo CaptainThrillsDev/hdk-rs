@@ -1,12 +1,11 @@
 use lzma_rust2::{EncodeMode, LzmaOptions, MfType};
 
+pub mod reader;
 mod segment;
-mod reader;
-mod writer;
 mod tests;
+pub mod writer;
 
 const MAGIC: &[u8] = b"segs";
-const HEADER_SIZE: usize = 16;
 const SEGMENT_SIZE: usize = u16::MAX as usize + 1;
 
 /// These parameters match the recommended ones by Sony in their
