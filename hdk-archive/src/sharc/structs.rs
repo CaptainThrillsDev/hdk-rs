@@ -1,7 +1,10 @@
 use binrw::prelude::*;
-use hdk_secure::hash::AfsHash;
+use enumflags2::BitFlags;
 
 use std::convert::TryInto;
+
+use crate::structs::ArchiveFlags;
+use hdk_secure::hash::AfsHash;
 
 // 1. The Raw Entry (as it appears in the decrypted ToC)
 #[derive(BinRead, Debug, Clone)]
@@ -100,7 +103,7 @@ pub struct SharcInnerHeader {
 #[derive(Debug, Clone)]
 pub struct SharcHeader {
     pub version: u16,
-    pub flags: u16,
+    pub flags: BitFlags<ArchiveFlags>,
     pub iv: [u8; 16],
     pub priority: i32,
     pub timestamp: i32,

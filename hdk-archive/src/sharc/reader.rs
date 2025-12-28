@@ -2,23 +2,38 @@ use aes::Aes256;
 use aes::cipher::{KeyIvInit, StreamCipher};
 use binrw::{BinReaderExt, Endian};
 use ctr::Ctr128BE;
+use enumflags2::BitFlag;
+use flate2::read::ZlibDecoder;
+
 use std::convert::TryFrom;
 use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
-use flate2::read::ZlibDecoder;
 use hdk_comp::zlib::reader::SegmentedZlibReader;
 use hdk_secure::{hash::AfsHash, reader::CryptoReader, xtea::modes::XteaPS3};
 
 use super::structs::{
     SharcEntry, SharcEntryMetadata, SharcHeader, SharcInnerHeader, SharcPreamble,
 };
-use crate::structs::{ARCHIVE_MAGIC, CompressionType, Endianness};
+use crate::structs::{ARCHIVE_MAGIC, ArchiveFlags, CompressionType, Endianness};
 
 pub struct SharcReader<R: Read + Seek> {
+    /// The underlying reader.
+    ///
+    /// This is where the archive data is read from.
     inner: R,
+
+    /// The parsed SHARC header.
     pub header: SharcHeader,
+
+    /// Every entry in the archive's table of contents.
     entries: Vec<SharcEntry>,
+
+    /// The detected endianness of the archive.
     pub endianness: Endianness,
+
+    /// Where the raw file data starts in the archive.
+    ///
+    /// Offsets in entries are relative to this point.
     data_start_offset: u64,
 }
 
@@ -100,7 +115,7 @@ impl<R: Read + Seek> SharcReader<R> {
         // 7. Assemble Public Header
         let header = SharcHeader {
             version: preamble.version_and_flags.0,
-            flags: preamble.version_and_flags.1,
+            flags: ArchiveFlags::from_bits_truncate(preamble.version_and_flags.1),
             iv: preamble.iv.try_into().unwrap(),
             priority: inner.priority,
             timestamp: inner.timestamp,

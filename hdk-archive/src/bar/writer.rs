@@ -12,8 +12,19 @@ use hdk_secure::{blowfish::Blowfish, hash::AfsHash, writer::CryptoWriter};
 use crate::structs::{ARCHIVE_MAGIC, ArchiveFlags, ArchiveVersion, CompressionType};
 
 pub struct BarWriter<W: Write> {
+    /// The underlying writer.
+    ///
+    /// This is where the archive data is written to.
     inner: W,
+
+    /// The archive flags to write in the header.
+    ///
+    /// Default is no flags.
     flags: BitFlags<ArchiveFlags>,
+
+    /// The list of entries to write.
+    ///
+    /// Each entry holds its data in-memory until `finish()` is called.
     entries: Vec<BarEntryToWrite>,
 }
 

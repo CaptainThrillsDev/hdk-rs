@@ -2,6 +2,7 @@ use aes::Aes256;
 use aes::cipher::KeyIvInit;
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use ctr::Ctr128BE;
+use enumflags2::{BitFlag, BitFlags};
 use flate2::{Compression, write::ZlibEncoder};
 use rand::RngCore;
 use std::io::{self, Read, Write};
@@ -9,7 +10,7 @@ use std::io::{self, Read, Write};
 use hdk_comp::zlib::writer::SegmentedZlibWriter;
 use hdk_secure::{hash::AfsHash, xtea::modes::XteaPS3};
 
-use crate::structs::{ARCHIVE_MAGIC, CompressionType, Endianness};
+use crate::structs::{ARCHIVE_MAGIC, ArchiveFlags, CompressionType, Endianness};
 
 /// Helper small struct to hold a queued entry for writing
 struct EntryToWrite {
@@ -24,23 +25,78 @@ struct EntryToWrite {
 
 pub struct SharcWriter<W: Write> {
     inner: W,
+
+    /// SHARC header and ToC encryption key.
+    ///
+    /// This one is canonically one of two keys:
+    /// - The core / default key, used for the game's core archives (such as `COREDATA.SHARC`)
+    /// - The CDN / content key, used for any SHARC embedded in CDN-downloaded SDAT files.
     key: [u8; 32],
+
+    /// Home archives can be either big-endian or little-endian.
+    ///
+    /// The canonical default for SHARC is big-endian.
     endianness: Endianness,
 
-    // Header fields
+    /// This should always be `512` for SHARC archives.
     pub version: u16,
-    pub flags: u16,
+
+    /// This holds Home archives bitflags.
+    pub flags: BitFlags<ArchiveFlags>,
+
+    /// This can be any random 16 bytes.
     pub iv: [u8; 16],
 
+    /// Priority field in the inner header.
+    ///
+    /// Home uses this to choose which archive has precedence when loading files
+    /// with conflicting name hashes.
+    ///
+    /// Set this to `0` for standard archives.
     pub priority: i32,
+
+    /// Contrarily to what the name suggests, this is often random bytes
+    /// in original Home archives.
+    ///
+    /// `hdk-rs` will, however, use the device's local time as a timestamp here.
     pub timestamp: i32,
 
+    /// The XTEA key used to encrypt file entries.
+    ///
+    /// This can be any random 16 bytes.
     pub files_key: [u8; 16],
 
+    /// The list of entries to write.
     entries: Vec<EntryToWrite>,
 }
 
+impl Default for SharcWriter<std::io::Cursor<Vec<u8>>> {
+    fn default() -> Self {
+        SharcWriter::new(std::io::Cursor::new(Vec::new()), [0u8; 32], Endianness::Big).unwrap()
+    }
+}
+
 impl<W: Write> SharcWriter<W> {
+    /// Set the SHARC header and ToC encryption key.
+    ///
+    /// This should only be set to one of two keys:
+    /// - The core / default key, used for the game's core archives (such as `COREDATA.SHARC`)
+    /// - The CDN / content key, used for any SHARC embedded in CDN-downloaded SDAT files.
+    ///
+    /// Setting a wrong key will render the game unable to read the archive.
+    pub fn with_key(mut self, key: [u8; 32]) -> Self {
+        self.key = key;
+        self
+    }
+
+    /// Set the endianness of the archive.
+    ///
+    /// Canonical SHARC archives are big-endian, but Home archives can be either.
+    pub fn with_endianess(mut self, endianness: Endianness) -> Self {
+        self.endianness = endianness;
+        self
+    }
+
     pub fn new(inner: W, key: [u8; 32], endianness: Endianness) -> io::Result<Self> {
         let mut rng = rand::rng();
         let mut iv = [0u8; 16];
@@ -54,7 +110,7 @@ impl<W: Write> SharcWriter<W> {
             key,
             endianness,
             version: 1,
-            flags: 0,
+            flags: ArchiveFlags::empty(),
             iv,
             priority: 0,
             timestamp: 0,
@@ -166,12 +222,14 @@ impl<W: Write> SharcWriter<W> {
         match self.endianness {
             Endianness::Little => {
                 self.inner.write_u32::<LittleEndian>(ARCHIVE_MAGIC)?;
-                let flags_and_version = (u32::from(self.version) << 16) | u32::from(self.flags);
+                let flags_and_version =
+                    (u32::from(self.version) << 16) | u32::from(self.flags.bits());
                 self.inner.write_u32::<LittleEndian>(flags_and_version)?;
             }
             Endianness::Big => {
                 self.inner.write_u32::<BigEndian>(ARCHIVE_MAGIC)?;
-                let flags_and_version = (u32::from(self.version) << 16) | u32::from(self.flags);
+                let flags_and_version =
+                    (u32::from(self.version) << 16) | u32::from(self.flags.bits());
                 self.inner.write_u32::<BigEndian>(flags_and_version)?;
             }
         }
