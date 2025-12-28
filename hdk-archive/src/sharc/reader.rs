@@ -9,11 +9,12 @@ use std::convert::TryFrom;
 use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
 use hdk_comp::zlib::reader::SegmentedZlibReader;
-use hdk_secure::{hash::AfsHash, reader::CryptoReader, xtea::modes::XteaPS3};
+use hdk_secure::{reader::CryptoReader, xtea::modes::XteaPS3};
 
 use super::structs::{
     SharcEntry, SharcEntryMetadata, SharcHeader, SharcInnerHeader, SharcPreamble,
 };
+use crate::archive::ArchiveReader;
 use crate::structs::{ARCHIVE_MAGIC, ArchiveFlags, CompressionType, Endianness};
 
 pub struct SharcReader<R: Read + Seek> {
@@ -136,29 +137,20 @@ impl<R: Read + Seek> SharcReader<R> {
         })
     }
 
-    /// Number of entries in the archive.
-    pub const fn len(&self) -> usize {
-        self.entries.len()
-    }
-
     pub const fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
+}
 
-    /// Borrow the raw parsed table-of-contents entries.
-    ///
-    /// Prefer `entries_metadata()` if you want a stable, copyable metadata view.
-    pub fn entries(&self) -> &[SharcEntry] {
-        &self.entries
-    }
+impl<R: Read + Seek> ArchiveReader for SharcReader<R> {
+    type Metadata = SharcEntryMetadata;
 
-    /// Borrow a single raw entry.
-    pub fn entry(&self, index: usize) -> Option<&SharcEntry> {
-        self.entries.get(index)
+    fn entry_count(&self) -> usize {
+        self.entries.len()
     }
 
     /// Return a copyable metadata view for an entry.
-    pub fn entry_metadata(&self, index: usize) -> io::Result<SharcEntryMetadata> {
+    fn entry_metadata(&self, index: usize) -> io::Result<SharcEntryMetadata> {
         let entry = self
             .entries
             .get(index)
@@ -172,28 +164,9 @@ impl<R: Read + Seek> SharcReader<R> {
         })
     }
 
-    /// Iterate copyable metadata for all entries.
-    ///
-    /// Items are `io::Result<_>` because malformed IV lengths are possible.
-    pub fn entries_metadata(&self) -> impl Iterator<Item = io::Result<SharcEntryMetadata>> + '_ {
-        self.entries.iter().map(|e| {
-            SharcEntryMetadata::try_from(e).map_err(|()| {
-                io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "Invalid entry IV length (expected 8 bytes)",
-                )
-            })
-        })
-    }
-
-    /// Find the first entry index with a matching `name_hash`.
-    pub fn find_entry(&self, name_hash: AfsHash) -> Option<usize> {
-        self.entries.iter().position(|e| e.name_hash() == name_hash)
-    }
-
     /// Returns a Reader that streams the file content, automatically handling
     /// decryption and decompression based on the entry type.
-    pub fn entry_reader<'a>(&'a mut self, index: usize) -> io::Result<Box<dyn Read + 'a>> {
+    fn entry_reader<'a>(&'a mut self, index: usize) -> io::Result<Box<dyn Read + 'a>> {
         let entry = self
             .entries
             .get(index)

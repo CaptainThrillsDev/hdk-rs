@@ -8,6 +8,7 @@ use hdk_comp::zlib::reader::SegmentedZlibReader;
 use hdk_secure::blowfish::Blowfish;
 use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
+use crate::archive::ArchiveReader;
 use crate::crypto::{DEFAULT_KEY, SIGNATURE_KEY};
 
 pub struct BarReader<R: Read + Seek> {
@@ -107,16 +108,24 @@ impl<R: Read + Seek> BarReader<R> {
             flags,
         })
     }
+}
 
-    pub fn entries(&self) -> &[BarEntry] {
-        &self.entries
+impl<R: Read + Seek> ArchiveReader for BarReader<R> {
+    type Metadata = BarEntryMetadata;
+
+    fn entry_count(&self) -> usize {
+        self.entries.len()
     }
 
-    pub fn entry_metadata(&self, index: usize) -> Option<BarEntryMetadata> {
-        self.entries.get(index).map(std::convert::Into::into)
+    fn entry_metadata(&self, index: usize) -> io::Result<BarEntryMetadata> {
+        let entry = self
+            .entries
+            .get(index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Invalid entry index"))?;
+        Ok(entry.into())
     }
 
-    pub fn entry_reader<'a>(&'a mut self, index: usize) -> io::Result<Box<dyn Read + 'a>> {
+    fn entry_reader<'a>(&'a mut self, index: usize) -> io::Result<Box<dyn Read + 'a>> {
         let entry = self
             .entries
             .get(index)

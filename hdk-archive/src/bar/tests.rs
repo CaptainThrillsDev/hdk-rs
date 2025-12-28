@@ -2,6 +2,8 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use sha1::Digest;
 use std::io::{Cursor, Read};
 
+use crate::archive::ArchiveReader;
+
 // Helper to write a mock BAR file
 fn create_mock_bar() -> Vec<u8> {
     let mut buffer = Vec::new();
@@ -55,13 +57,16 @@ fn test_open_bar() {
 
     let mut archive = BarReader::open(cursor).expect("Failed to open BAR");
 
-    assert_eq!(archive.entries().len(), 1);
-    let entry = &archive.entries()[0];
-    assert_eq!(entry.uncompressed_size, 4);
+    assert_eq!(archive.entry_count(), 1);
+    let meta = archive
+        .entry_metadata(0)
+        .expect("Failed to get entry metadata");
+    assert_eq!(meta.uncompressed_size, 4);
 
-    let mut reader = archive.entry_reader(0).expect("Failed to get entry reader");
+    let mut stream = archive.entry(0).expect("Failed to get entry stream");
     let mut content = Vec::new();
-    reader
+    stream
+        .reader
         .read_to_end(&mut content)
         .expect("Failed to read content");
 
@@ -189,7 +194,7 @@ fn test_encrypted_entry_readback() {
     // Open with BarReader and verify content round-trip
     let cursor = Cursor::new(buf);
     let mut archive = crate::bar::reader::BarReader::open(cursor).expect("Failed to open BAR");
-    assert_eq!(archive.entries().len(), 1);
+    assert_eq!(archive.entry_count(), 1);
 
     let mut reader = archive.entry_reader(0).expect("Failed to get entry reader");
     let mut out = Vec::new();
