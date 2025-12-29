@@ -13,10 +13,12 @@ flate2 = "1.1.5"
 rand = "0.9.2"
 enumflags2 = "0.7.12"
 sha1_smol = "1.0.1"
+walkdir = "2.5.0"
+fancy-regex = "0.17.0"
 
-# Local crates
-hdk-comp = { path = "../hdk-comp" }
-hdk-secure = { path = "../hdk-secure" }
+# hdk-rs dependencies
+hdk-comp = { git = "https://github.com/ZephyrCodesStuff/hdk-rs.git" }
+hdk-secure = { git = "https://github.com/ZephyrCodesStuff/hdk-rs.git" }
 
 [dev-dependencies]
 sha1 = "0.11.0-rc.3"

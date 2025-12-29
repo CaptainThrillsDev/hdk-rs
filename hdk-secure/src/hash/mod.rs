@@ -4,6 +4,13 @@ use std::path::Path;
 pub struct AfsHash(pub i32);
 
 impl AfsHash {
+    /// Returns `true` if the given string could be a valid uppercase hex AfsHash.
+    ///
+    /// This does not verify that the string is an actual AfsHash: only that it matches the expected format.
+    pub fn is_valid_hash_str(s: &str) -> bool {
+        s.len() == 8 && s.chars().all(|c| c.is_ascii_hexdigit() && c.is_uppercase())
+    }
+
     pub fn new_from_str(s: &str) -> Self {
         Self(afs_hash(s.chars()))
     }
