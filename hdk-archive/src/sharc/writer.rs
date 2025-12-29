@@ -72,7 +72,7 @@ pub struct SharcWriter<W: Write> {
 
 impl Default for SharcWriter<std::io::Cursor<Vec<u8>>> {
     fn default() -> Self {
-        SharcWriter::new(std::io::Cursor::new(Vec::new()), [0u8; 32], Endianness::Big).unwrap()
+        Self::new(std::io::Cursor::new(Vec::new()), [0u8; 32], Endianness::Big).unwrap()
     }
 }
 
@@ -84,7 +84,7 @@ impl<W: Write> SharcWriter<W> {
     /// - The CDN / content key, used for any SHARC embedded in CDN-downloaded SDAT files.
     ///
     /// Setting a wrong key will render the game unable to read the archive.
-    pub fn with_key(mut self, key: [u8; 32]) -> Self {
+    pub const fn with_key(mut self, key: [u8; 32]) -> Self {
         self.key = key;
         self
     }
@@ -92,7 +92,7 @@ impl<W: Write> SharcWriter<W> {
     /// Set the endianness of the archive.
     ///
     /// Canonical SHARC archives are big-endian, but Home archives can be either.
-    pub fn with_endianess(mut self, endianness: Endianness) -> Self {
+    pub const fn with_endianess(mut self, endianness: Endianness) -> Self {
         self.endianness = endianness;
         self
     }

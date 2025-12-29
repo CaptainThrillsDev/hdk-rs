@@ -25,4 +25,5 @@ mod tests;
 
 // Extracted DataBlockProcessor to its own module
 pub mod block;
+pub mod options;
 pub use block::DataBlockProcessor;

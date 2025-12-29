@@ -56,10 +56,7 @@ impl<R: Read + Seek> BarReader<R> {
         let entries_size = (entries_count as u64) * 16;
 
         // Handle ZTOC
-        let mut toc_data;
-        let toc_base;
-
-        if flags.contains(ArchiveFlags::ZTOC) {
+        let (toc_data, toc_base) = if flags.contains(ArchiveFlags::ZTOC) {
             let compressed_size = reader
                 .read_le::<u32>()
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -68,17 +65,21 @@ impl<R: Read + Seek> BarReader<R> {
 
             // Decompress ZTOC
             let mut d = flate2::Decompress::new(false);
-            let mut out = Vec::with_capacity(entries_size as usize);
-            d.decompress_vec(&compressed_data, &mut out, flate2::FlushDecompress::Finish)
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-            toc_data = out;
+            let mut toc_data = Vec::with_capacity(entries_size as usize);
+            d.decompress_vec(
+                &compressed_data,
+                &mut toc_data,
+                flate2::FlushDecompress::Finish,
+            )
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
-            toc_base = 24 + u64::from(compressed_size);
+            (toc_data, 24 + u64::from(compressed_size))
         } else {
-            toc_data = vec![0u8; entries_size as usize];
+            let mut toc_data = vec![0u8; entries_size as usize];
             reader.read_exact(&mut toc_data)?;
-            toc_base = 20 + entries_size;
-        }
+
+            (toc_data, 20 + entries_size)
+        };
 
         let mut cursor = Cursor::new(toc_data);
         let mut entries = Vec::with_capacity(entries_count);

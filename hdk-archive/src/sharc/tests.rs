@@ -18,19 +18,19 @@ fn roundtrip_write_read() {
     let file_b = b"Another file!".as_ref();
 
     w.add_entry_from_bytes(
-        AfsHash::from_str("file_a"),
+        AfsHash::new_from_str("file_a"),
         crate::structs::CompressionType::ZLib,
         file_a,
     )
     .unwrap();
     w.add_entry_from_bytes(
-        AfsHash::from_str("file_b"),
+        AfsHash::new_from_str("file_b"),
         crate::structs::CompressionType::EdgeZLib,
         file_b,
     )
     .unwrap();
     w.add_entry_from_bytes(
-        AfsHash::from_str("secret_file"),
+        AfsHash::new_from_str("secret_file"),
         crate::structs::CompressionType::Encrypted,
         b"Secret",
     )

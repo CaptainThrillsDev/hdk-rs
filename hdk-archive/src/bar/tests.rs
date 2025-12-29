@@ -216,7 +216,7 @@ fn test_encrypted_entry_write_and_read() {
     let mut writer = BarWriter::new(Cursor::new(Vec::new()));
     writer
         .add_entry(
-            AfsHash::from_str("encrypted_file"),
+            AfsHash::new_from_str("encrypted_file"),
             crate::structs::CompressionType::Encrypted,
             content,
         )

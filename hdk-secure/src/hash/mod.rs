@@ -4,11 +4,11 @@ use std::path::Path;
 pub struct AfsHash(pub i32);
 
 impl AfsHash {
-    pub fn from_str(s: &str) -> Self {
+    pub fn new_from_str(s: &str) -> Self {
         Self(afs_hash(s.chars()))
     }
 
-    pub fn from_path(path: &Path) -> Self {
+    pub fn new_from_path(path: &Path) -> Self {
         let s = path.to_str().unwrap_or_default();
         Self(afs_hash(s.chars()))
     }

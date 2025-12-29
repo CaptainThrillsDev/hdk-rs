@@ -3,6 +3,7 @@ use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use crate::block::{DataBlockProcessor, METADATA_OFFSET};
 use crate::error::SdatError;
 use crate::headers::{EdatHeader, NpdHeader};
+use crate::options::EncryptBlockOptions;
 
 /// High-level SDAT writer.
 ///
@@ -214,10 +215,12 @@ impl<W: Write + Seek> SdatStreamWriter<W> {
 
             let (encrypted, hash) = block_processor.encrypt_data_block(
                 &plain,
-                block_index as u32,
-                &edat_header,
-                &npd_header,
-                &crypt_key,
+                EncryptBlockOptions {
+                    block_index: block_index as u32,
+                    edat_header: edat_header.clone(),
+                    npd_header: npd_header.clone(),
+                    crypt_key,
+                },
             )?;
 
             // Fill metadata entry (hash only for non-compressed format).

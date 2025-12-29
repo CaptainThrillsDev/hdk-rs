@@ -67,6 +67,8 @@ Contributions are welcome! Since this project aims for stability and correctness
 3. Do not go out-of-scope. Your PR should only touch what is relevant to your addition.
 4. Make sure your PR contains all the details needed to know what you're changing and why.
 
+Note: although not strictly enforced, running `clippy::pedantic` every now and then is not a bad idea.
+
 ## 📄 License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
