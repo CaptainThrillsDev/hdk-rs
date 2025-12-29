@@ -124,7 +124,7 @@ impl Mapper {
     /// Set an output folder via [Mapper::with_output_folder] to specify where mapped files should be written.
     ///
     /// If not set, defaults to a sibling folder named `{input_folder}_mapped`.
-    pub fn new(input_folder: PathBuf) -> Self {
+    pub const fn new(input_folder: PathBuf) -> Self {
         Self {
             input_folder,
             output_folder: None,
@@ -150,7 +150,7 @@ impl Mapper {
     }
 
     /// Enable full mapping mode, which includes slower regex patterns.
-    pub fn with_full(mut self, full: bool) -> Self {
+    pub const fn with_full(mut self, full: bool) -> Self {
         self.full = full;
         self
     }
@@ -175,7 +175,7 @@ impl Mapper {
 
     /// Run the mapping process and return a summary `MappingResult`.
     pub fn run(self) -> MappingResult {
-        let Mapper {
+        let Self {
             input_folder,
             output_folder: builder_output,
             uuid,
@@ -256,12 +256,7 @@ impl Mapper {
             .collect::<Vec<String>>();
 
         if full {
-            patterns.extend(
-                SLOW_PATTERNS
-                    .iter()
-                    .map(|&x| x.to_string())
-                    .collect::<Vec<String>>(),
-            );
+            patterns.extend(SLOW_PATTERNS.iter().map(|&x| x.to_string()));
         }
 
         // Precompile regexes for better performance
@@ -345,7 +340,7 @@ impl Mapper {
         }
 
         // Prepare output folder
-        let output_folder = builder_output.unwrap_or({
+        let output_folder = builder_output.unwrap_or_else(|| {
             let mut output = input_folder.clone();
             let folder_name = input_folder.file_name().unwrap().to_str().unwrap();
 
@@ -368,13 +363,15 @@ impl Mapper {
             }
 
             let hash = AfsHash::new_from_str(&hash_str);
-            let rw = hashes.read().unwrap();
-            let recovered_path = match rw.get(&hash) {
-                Some(p) => p.clone(),
-                None => {
-                    println!("[!] Could not find mapping for file {}", path.display());
-                    not_found.write().unwrap().push(path.clone());
-                    continue;
+            let recovered_path = {
+                let rw = hashes.read().unwrap();
+                match rw.get(&hash) {
+                    Some(p) => p.clone(),
+                    None => {
+                        println!("[!] Could not find mapping for file {}", path.display());
+                        not_found.write().unwrap().push(path.clone());
+                        continue;
+                    }
                 }
             };
 
