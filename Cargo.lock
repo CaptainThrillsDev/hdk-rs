@@ -430,8 +430,8 @@ dependencies = [
  "enumflags2",
  "fancy-regex",
  "flate2",
- "hdk-comp 0.1.0 (git+https://github.com/ZephyrCodesStuff/hdk-rs.git)",
- "hdk-secure 0.1.0 (git+https://github.com/ZephyrCodesStuff/hdk-rs.git)",
+ "hdk-comp",
+ "hdk-secure",
  "num_enum",
  "rand",
  "sha1",
@@ -442,16 +442,6 @@ dependencies = [
 [[package]]
 name = "hdk-comp"
 version = "0.1.0"
-dependencies = [
- "byteorder",
- "flate2",
- "lzma-rust2",
-]
-
-[[package]]
-name = "hdk-comp"
-version = "0.1.0"
-source = "git+https://github.com/ZephyrCodesStuff/hdk-rs.git#77f0baea21441da65a283f42a23473f35c07e5d1"
 dependencies = [
  "byteorder",
  "flate2",
@@ -497,21 +487,6 @@ dependencies = [
 [[package]]
 name = "hdk-secure"
 version = "0.1.0"
-dependencies = [
- "byteorder",
- "cbc",
- "cipher",
- "crc16",
- "ctr",
- "ecb",
- "rand",
- "uuid",
-]
-
-[[package]]
-name = "hdk-secure"
-version = "0.1.0"
-source = "git+https://github.com/ZephyrCodesStuff/hdk-rs.git#77f0baea21441da65a283f42a23473f35c07e5d1"
 dependencies = [
  "byteorder",
  "cbc",
