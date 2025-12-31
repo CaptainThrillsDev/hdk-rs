@@ -1,6 +1,7 @@
 use std::io::{Read, Seek, SeekFrom, Write};
 
 use crate::block::{BlockMetadata, DataBlockProcessor, METADATA_OFFSET};
+use crate::crypto::SdatKeys;
 use crate::error::SdatError;
 use crate::headers::EdatFlag;
 use crate::headers::{EdatHeader, NpdHeader};
@@ -19,7 +20,12 @@ pub struct SdatReader<R: Read + Seek> {
 
 impl<R: Read + Seek> SdatReader<R> {
     /// Open an SDAT file from a seekable reader.
-    pub fn open(mut inner: R) -> Result<Self, SdatError> {
+    ///
+    /// # Arguments
+    ///
+    /// * `inner` - The seekable reader containing the SDAT file.
+    /// * `keys` - The cryptographic keys required for decryption.
+    pub fn open(mut inner: R, keys: &SdatKeys) -> Result<Self, SdatError> {
         inner
             .seek(SeekFrom::Start(0))
             .map_err(|e| SdatError::InvalidHeader(format!("Failed to seek: {e}")))?;
@@ -42,7 +48,7 @@ impl<R: Read + Seek> SdatReader<R> {
             return Err(SdatError::InvalidFormat);
         }
 
-        let crypt_key = crate::crypto::generate_sdat_key(&npd_header.dev_hash);
+        let crypt_key = crate::crypto::generate_sdat_key(&keys.sdat_key, &npd_header.dev_hash);
 
         let block_num = edat_header
             .file_size
@@ -61,7 +67,7 @@ impl<R: Read + Seek> SdatReader<R> {
             npd_header,
             edat_header,
             crypt_key,
-            block_processor: DataBlockProcessor::new(),
+            block_processor: DataBlockProcessor::new(*keys),
             block_num,
             metadata_section_size,
         })

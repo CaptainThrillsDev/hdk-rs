@@ -26,7 +26,7 @@
 //!     .with_full(true) // optional, enables slower patterns
 //!     .run();
 //!
-//! println!("Mapped {} files, {} not found.", result.mapped, result.not_found);
+//! println!("Mapped {} files, {} not found.", result.mapped, result.not_found.len());
 //! ```
 
 use std::{
@@ -104,7 +104,7 @@ pub struct MappingResult {
 ///     .with_full(true) // optional, enables slower patterns
 ///     .run();
 ///
-/// println!("Mapped {} files, {} not found.", result.mapped, result.not_found);
+/// println!("Mapped {} files, {} not found.", result.mapped, result.not_found.len());
 /// ```
 pub struct Mapper {
     input_folder: PathBuf,

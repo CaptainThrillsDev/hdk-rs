@@ -1,10 +1,9 @@
 use crate::CryptoContext;
 use crate::CryptoError;
 use crate::MemoryError;
-use crate::crypto::EDAT_IV;
 use crate::crypto::{
     EDAT_COMPRESSED_FLAG, EDAT_DEBUG_DATA_FLAG, EDAT_ENCRYPTED_KEY_FLAG, EDAT_FLAG_0X02,
-    EDAT_FLAG_0X10, EDAT_FLAG_0X20,
+    EDAT_FLAG_0X10, EDAT_FLAG_0X20, EDAT_IV, SdatKeys,
 };
 use crate::error::SdatError;
 use crate::options::{DecryptBlockOptions, EncryptBlockOptions, ParseBlockMetadataOptions};
@@ -31,11 +30,11 @@ pub struct DataBlockProcessor {
 }
 
 impl DataBlockProcessor {
-    /// Create a new data block processor
+    /// Create a new data block processor with the given keys.
     #[must_use]
-    pub const fn new() -> Self {
+    pub const fn new(keys: SdatKeys) -> Self {
         Self {
-            crypto_ctx: CryptoContext::new(),
+            crypto_ctx: CryptoContext::new(keys),
         }
     }
 
@@ -604,11 +603,5 @@ impl DataBlockProcessor {
         }
 
         Ok(())
-    }
-}
-
-impl Default for DataBlockProcessor {
-    fn default() -> Self {
-        Self::new()
     }
 }
