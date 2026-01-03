@@ -45,11 +45,8 @@ impl<R: Read + Seek> BarReader<R> {
         // Determine endianness (default to Little)
         let endianness = endianness.unwrap_or(Endianness::Little);
         
-        // Convert to binrw::Endian
-        let endian = match endianness {
-            Endianness::Little => Endian::Little,
-            Endianness::Big => Endian::Big,
-        };
+        // Convert to binrw::Endian using the From trait
+        let endian: Endian = endianness.into();
 
         let magic_val = reader
             .read_type::<u32>(endian)
