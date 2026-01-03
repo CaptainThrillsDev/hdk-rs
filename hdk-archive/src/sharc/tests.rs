@@ -36,5 +36,5 @@ fn roundtrip_write_read() {
     let cursor = std::io::Cursor::new(out);
     let archive = crate::sharc::reader::SharcReader::open(cursor, test_key).unwrap();
 
-    assert_eq!(archive.header.file_count, 3);
+    assert_eq!(archive.header().file_count, 3);
 }

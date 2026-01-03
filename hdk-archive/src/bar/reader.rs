@@ -128,6 +128,10 @@ impl<R: Read + Seek> BarReader<R> {
             signature_key,
         })
     }
+
+    pub fn header(&self) -> BarHeader {
+        self.header.clone()
+    }
 }
 
 impl<R: Read + Seek> ArchiveReader for BarReader<R> {
